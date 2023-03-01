@@ -1,4 +1,4 @@
-# Viber Auto Poster Guide
+# Viber Channel Auto Poster
 
 This guide will illustrate how to setup a Viber auto poster using a simple flask server as the webhook. Viber requires the webhook to respond with a 200 response. They also require the webhook URL to have a trusted certificate. Self signed certificates will not work.
 
