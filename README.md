@@ -1,131 +1,71 @@
 # Viber Channel Auto Poster
 
-This guide will illustrate how to setup a Viber channel auto poster using a simple flask server as the webhook. Viber requires the webhook to respond with a 200 response. They also require the webhook URL to have a trusted certificate. Self signed certificates will not work.
+This guide will illustrate how to setup automated channel posts for viber. This guide uses the [Viber Channel Post API ](https://developers.viber.com/docs/tools/channels-post-api/#channels-post-api)
 
 ## Creating a channel
 
 Open Viber and create a channel. Go the right-side menu and click developer tools to get the `Authentication Token`
 
-## The Flask Server, Webhooks & Certbot
+## Setting up a webhook
 
-Viber requires us that the flask server returns 200 when setting the webhook
+We need to setup a webhook initially, its not clear whether viber does anything with this webhook later on.
 
-As there is no two way communication ( as this is not a bot ) so the webhook only needs to be setup once. I have tested this with sending messages to the channel after shutting down the flask server and it works.
+In this repositiory I have included two ways to achieve this
+1. Flask Server (Bit Harder)
+2. Cloudflare Workers (Very Easy)
 
-Unless Viber does a check once in a while, the server not continuously running should not be a problem. (correct me with a pull request)
+> The only reason I am including the flask server is because I had already written it before I got to know cloudflare workers. I would recommend using cloudflare workers as it is much easier to setup and maintain. Ive also exluded the readme sections of Flask and Certbot because Viber requires a SSL certificate to be setup and we can skip this whole process by using cloudflare workers.
 
-Before setting up the flask script, make a subdomain for a domain you own through cloudflare DNS. It should be an A record that points to the ip of your webhook server.
+### The Webservers Function
 
-After this is done install certbot and follow the guide on certbots website. Do not say that you are using nginx or anything else. (As you are not using anything)
+The webserver checks for a specific header ('X-Viber-Content-Signature') in the Post requests it recieves, and returns a response with status 200 if the header exists, and status 403 if it doesn't.
 
-Once this part is done you can write the flask server python script. Make sure to record the locations of the .pem files certbot gave.
+Flask or Cloudflare workers or any other webserver can be used to achieve this as long as it does the above. (with SSL ofcourse)
 
-### The flask python script
+### API Requests
 
-only needs flask and does not need a viber library for python (as we are not using the bot api)
+In this very repo we have included a basic API Collection for Bruno which can be used to test the API endpoints. This does not include many other endpoints that the Viber Channel API provides. Please refer to the [Viber Channel API Documentation](https://developers.viber.com/docs/tools/channels-post-api/#channels-post-api) for more information.
 
-Install flask with pip install -r requirements.txt
+In our Bruno API Collection we have an environment with auth token, userid and webhook url. Please change these to your own values. The webhook url should be your cloudflare workers url or your flask server url.
 
-```python
-from flask import Flask, Request, Response, request
-import logging
+The order of the requests should be:
+1. Setup webhook using the webhook url and auth token
+2. Make request to get user id
+3. Make request to send message to user id
+4. . . .
+5. any other requests you want to make
 
-#Logging
-logger = logging.getLogger(__name__)
+#### Clarification on the user id
 
-#Initialization
-app = Flask(__name__)
+The userid is the ID inside the `members` array of the response from the `get user id` request. The `get user id` request returns a list of all the members in the channel.
 
-@app.route('/', methods=['POST'])
-def incoming():
-    # log what we just recieved
-    logger.debug("received request. post data: {0}".format(request.get_data()))
-
-    # X-Viber-Content-Signature needs to be in the header of the request
-    if request.headers.get('X-Viber-Content-Signature') is None:
-        return Response(status=403) # respond with 403 if not
-
-    # respond with 200
-    return Response(status=200)
-
-if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=443, debug=True, ssl_context=('fullchain.pem', 'privkey.pem'))
-
-# above file locations are NOT the default locations set by certibot.
-# edit them to have the locations you recorded before
-```
-
-### Sending the requests
-
-Using your favourite request sending tool ( Firefox Dev Edition is cool but I used Insomnia ), send a POST request with JSON post data. Replace auth_token with the token you got from the first section of this README article.
-
-1. `https://chatapi.viber.com/pa/set_webhook`
-
-```python
-{
-   "url":"https://my.host.com",
-   "auth_token":"your_auth_token"
-}
-```
-
-Remember to run the flask server before this is sent and if everything is well, you should be getting a 200. Anything else is a failure including status code 1.
-
-## We need a unique user id too
-
-Before we get into sending messages and using the other api endpoints we also need a userid which can be got by sending a post request to get_account_info
-
-1. To get that we would be sending a post request to : `https://chatapi.viber.com/pa/get_account_info`
-
-   1. with the following as post data
-
-   ```python
-   {
-      "auth_token": "your_auth_token"
-   }
-   ```
-
-   user id will be returned from this
-
-   ```python
-   {
-   	"status":0,
-   	"status_message": "ok",
-   	"Id": "pa:75346594275468546724",
-   	"chat_hostname": "Channel name",
-   	"background":
-   	"https://content.cdn.viber.com/backgrounds_v1/Android/800/10000501.jpg",
-   	"members":[
-   		{
-   		"id":"01234567890A=",
-   		"name": "my name",
-   		"avatar" :"https://example.com",
-   		"role":"admin"
-   		}
-   	]
-   }
-   ```
-
-   01234567890A= is the user id in the above case
-
-## Sending the message
-
-Like we did before we would be sending a post request to the following address with the message contents
-
-`https://chatapi.viber.com/pa/post`
 
 ```json
 {
-  "auth_token": "your_auth_token",
-  "from": "your_user_id",
-  "type": "text",
-  "text": "Hello world!"
+  "status": 0,
+  "status_message": "ok",
+  "id": "this_is_not_the_user_id",
+  "chat_hostname": "SN-CHAT-10_",
+  "name": "Automated Channel",
+  "members": [
+    {
+      "id": "this_is_the_user_id",
+      "name": "Fauzaan",
+      "avatar": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "role": "superadmin"
+    }
+  ]
 }
 ```
 
-![Untitled](img/photo_2023-03-01_22-29-32.jpg)
+#### Impersonating other admins
 
-As the point of this readme was to discuss the setup rather than every API endpoint please follow up on [https://developers.viber.com/docs/tools/channels-post-api/](https://developers.viber.com/docs/tools/channels-post-api/)
+Im not sure why this exists as a feature, but you can impersonate other super admins in the channel by using their user id in the `send message` request.
 
-## Developing further
+## Developing Further
 
-Taking this simple setup we can do automated channels from scripts by sending requests just like we do any telegram automated channel script.
+This is the basic implementation of the Viber Channel API. You can develop further by using the [Viber Channel API Documentation](https://developers.viber.com/docs/tools/channels-post-api/#channels-post-api) and your own creativity.
+
+## VIBER IS BAD SWITCH TO TELEGRAM 
+
+
