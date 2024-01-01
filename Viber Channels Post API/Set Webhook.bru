@@ -1,0 +1,18 @@
+meta {
+  name: Set Webhook
+  type: http
+  seq: 2
+}
+
+post {
+  url: https://chatapi.viber.com/pa/set_webhook
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+     "url":"{{webhook_url}}",
+     "auth_token":"{{auth_token}}"
+  }
+}

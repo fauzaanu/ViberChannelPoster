@@ -1,0 +1,17 @@
+meta {
+  name: Get Userid
+  type: http
+  seq: 3
+}
+
+post {
+  url: https://chatapi.viber.com/pa/get_account_info
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "auth_token": "{{auth_token}}"
+  }
+}

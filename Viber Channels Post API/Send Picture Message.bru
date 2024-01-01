@@ -1,0 +1,22 @@
+meta {
+  name: Send Picture Message
+  type: http
+  seq: 1
+}
+
+post {
+  url: https://chatapi.viber.com/pa/post
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "auth_token": "{{auth_token}}",
+    "from": "{{userid}}",
+    "type": "picture",
+    "text": "Picture description",
+    "media": "https://www.firstbenefits.org/wp-content/uploads/2017/10/placeholder-1024x1024.png",
+    "thumbnail": "https://www.firstbenefits.org/wp-content/uploads/2017/10/placeholder-1024x1024.png"
+  }
+}
