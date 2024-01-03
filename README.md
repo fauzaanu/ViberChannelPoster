@@ -1,3 +1,5 @@
+> Before reading this, consider switching to telegram
+
 # Viber Channel Auto Poster
 
 This guide will illustrate how to setup automated channel posts for viber. This guide uses the [Viber Channel Post API ](https://developers.viber.com/docs/tools/channels-post-api/#channels-post-api)
