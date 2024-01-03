@@ -1,4 +1,7 @@
 > Before reading this, consider switching to telegram
+> 1. Viber Channels API allows you to impersonate others
+> 2. Viber deletes files for "privacy" reasons
+> 3. Telegram is so much better
 
 # Viber Channel Auto Poster
 
